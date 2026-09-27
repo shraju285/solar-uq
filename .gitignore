@@ -1,0 +1,39 @@
+# Virtual environment
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+# Data — never committed by default (see data/README.md for the licence/terms
+# rule: only committed if NIST's terms explicitly permit it AND we decide to).
+data/raw/*
+data/interim/*
+data/processed/*
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+
+# Trained model weights — not committed unless a specific run is deliberately
+# kept as a deliverable (see results/ policy in README.md).
+models/*
+!models/.gitkeep
+
+# Large or transient experiment outputs
+results/runs/*
+!results/runs/.gitkeep
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Secrets
+.env
+*.pem

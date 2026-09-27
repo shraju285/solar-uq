@@ -1,0 +1,29 @@
+# Pinned to major/minor versions, not exact patch versions: reproducible enough
+# to avoid breaking API changes, loose enough that security patches still apply.
+# Installed with:  pip install -r requirements.txt
+# (from inside an activated virtual environment — see README.md)
+
+# Core data handling
+pandas>=2.2,<3.0
+numpy>=1.26,<2.1
+
+# Statistical baselines
+statsmodels>=0.14,<0.15
+scikit-learn>=1.4,<1.6
+
+# Deep learning
+torch>=2.2,<2.5
+
+# Solar-position / clear-sky modelling (used for smart persistence and
+# knowable-in-advance features; Stage 3)
+pvlib>=0.11,<0.12
+
+# Plotting and dashboard
+plotly>=5.20,<6.0
+streamlit>=1.35,<2.0
+
+# Config files
+PyYAML>=6.0,<7.0
+
+# Testing
+pytest>=8.0,<9.0

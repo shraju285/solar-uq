@@ -1,0 +1,62 @@
+# Central configuration. Every script reads its settings from here rather
+# than hard-coding them, so a run's config file (copied into
+# results/runs/<run_id>/) is a complete record of what produced it.
+#
+# Values marked TBD are dataset-dependent and get filled in once the Stage 2
+# audit and Stage 3 preprocessing decisions are made — they are placeholders,
+# not decisions.
+
+project:
+  name: solar-uq
+  seed: 42  # default seed; final evaluation (Stage 8) uses several seeds
+
+data:
+  dataset: nist  # working default; "nrel" is the documented fallback (docs/decisions.md)
+  raw_dir: data/raw
+  interim_dir: data/interim
+  processed_dir: data/processed
+  timezone: TBD          # confirmed in Stage 2 audit
+  site_id: TBD            # which array, confirmed in Stage 2 audit
+
+forecast:
+  resolution_minutes: 15
+  lookback_steps: 24      # ~6 hours at 15-min resolution
+  horizon_steps: 8         # up to 2 hours at 15-min resolution
+
+split:
+  # Chronological only — never shuffled. Exact dates filled in Stage 3 once
+  # the available date range is known (Stage 2).
+  train_end: TBD
+  val_end: TBD
+  test_end: TBD
+  # calibration_end is only added if CQR (Stage 7) is actually built.
+  gap_steps: 32            # >= lookback_steps + horizon_steps, between blocks
+
+models:
+  persistence:
+    enabled: true
+  smart_persistence:
+    enabled: false          # stretch goal — enable only if Stage 3 audit justifies it
+  arima:
+    enabled: true
+    order: TBD               # chosen in Stage 4 from the data (p, d, q)
+  lstm:
+    enabled: true
+    hidden_size: TBD
+    num_layers: TBD
+    dropout: TBD
+  quantile_lstm:
+    enabled: true
+    quantiles: [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]
+
+uncertainty:
+  cqr:
+    enabled: false          # stretch goal — Stage 7 only, after core is complete
+
+evaluation:
+  daytime_only_headline: true
+  daytime_definition: TBD   # e.g. solar zenith threshold — confirmed Stage 3
+
+paths:
+  results_dir: results/runs
+  models_dir: models
