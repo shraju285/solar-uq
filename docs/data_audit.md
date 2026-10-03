@@ -33,24 +33,30 @@ Each array has its own inverter, power-meter and combiner-box instrumentation (f
   - The peer-reviewed publication states timestamps are in **"Eastern Standard Time (no daylight saving time)"**.
   - These are not the same thing — Local Solar Time drifts continuously with the sun's position and the site's longitude; EST is a fixed civil-clock offset (UTC−5) that doesn't observe DST. I can't resolve this from documentation alone; it needs checking against an actual file's timestamp column (e.g. does solar noon fall near 12:00, which would suggest solar time, or does it drift by the ~15–20 minutes you'd expect from the equation of time if it's really EST?). **If it genuinely is fixed EST with no DST, that's good news for Stage 3** — no duplicate/missing-hour DST transitions to handle, one of the more common timestamp bugs in this kind of pipeline.
 
-## 4. Date range — second conflict to resolve
+## 4. Date range — RESOLVED (2026-10-03)
 
-- The **publication** (2017, peer-reviewed) describes the public dataset as covering **2015-01-01 to 2016-12-31** — two complete calendar years — with **>99% combined data availability**.
-- The **data.gov catalog record** (auto-harvested metadata) states temporal coverage **2015-01-01 to 2018-12-31**, and a "dataset last updated" date of **2019-12-31** — suggesting the portal may have been extended with two further years of data after the 2017 publication, but I have no direct confirmation of this.
-- **Known quality incidents from the publication** (useful for the cleaning policy either way): a 33-day Ground Array module removal/reinstallation, and an inverter arcing event with repairs spanning **25 Aug – 9 Sep 2015**.
+- **Resolved using NIST's own authoritative PDR record** (`ark:/88434/mds2-2167` at data.nist.gov — the dataset's official metadata record, not a third-party harvest): *"one-minute averaged values and one-second instantaneous values for 2015 through 2018."* **The real range is 4 years (2015–2018)**, not the 2-year figure.
+- The 2017 publication's "2015–2016" simply predates this later extension — the PDR record's own modification date (2019-12-31) is consistent with the dataset having grown after that paper was written. Not a real conflict once the two documents' dates are accounted for.
+- **Known quality incidents from the 2017 publication** (useful for the cleaning policy either way, though only covering 2015-2016): a 33-day Ground Array module removal/reinstallation, and an inverter arcing event with repairs spanning **25 Aug – 9 Sep 2015**. Any incidents in 2017-2018 are not yet documented anywhere I've found — worth checking for once real files are available.
+- **New minor conflict spotted while resolving this:** the PDR record describes the three arrays as spanning **"73 kW to 217 kW"**; the 2017 publication gives Ground as **271 kW**. Not resolved — flagged rather than guessed. Doesn't block anything yet (array capacity matters for Stage 3 normalisation, not for the suitability verdict).
 
-If the real range is 2 years, that's enough for a chronological train/val/test split but thin for seasonal generalisation claims (one summer, one winter, roughly). If it's 4 years, that's considerably more comfortable. This matters enough to the split design (Stage 3) that it should be confirmed before relying on either figure.
+4 years of history is comfortable for a chronological train/validation/test split across multiple seasons — this removes what was the main data-adequacy risk.
 
 ## 5. What's blocking file-level verification
 
-This cloud container's network policy denies direct access to `pvdata.nist.gov` (confirmed: the outbound proxy returns a policy-denial 403 on connection). The portal is also a JavaScript application, so even permitted, a plain fetch wouldn't show real file listings — browsing it properly needs a normal browser. The project currently has no custom cloud environment configured that could allow this host.
+This cloud container's network policy denies direct access to `pvdata.nist.gov` *and* `api.box.com` (confirmed: the outbound proxy returns a policy-denial 403 on connection to both). The portal is also a JavaScript application, so even if permitted, a plain fetch wouldn't show real file listings — browsing it properly needs a normal browser. The project currently has no custom cloud environment configured that could allow these hosts.
 
-**Not yet verified, and can't be from here:**
-- Which of the two date ranges (2016 vs 2018 cutoff) is real
+The user found (2026-10-03) that the portal's own "Bulk Download" button is additionally broken by what looks like a genuine site bug: the page's Content Security Policy blocks its own JavaScript from calling `api.box.com` (the backend that actually serves files), so the browser console shows a CSP refusal + failed fetch for everyone, not just automated tools. NIST's official metadata record has no file-level listing to fall back on either — its only distribution is the DOI link back to the same portal, so there's no public mapping from a Box file ID to a specific variable/date selection to check it against. Next step is the user trying an alternate (non-bulk) export, or contacting the NIST data steward if it's a real site bug.
+
+**Resolved from official metadata, no file access needed:**
+- ✅ Date range: 2015–2018 (§4)
+
+**Still not verified, and can't be from here:**
 - The LST-vs-EST timestamp question, against an actual file
 - Exact array GPS coordinates, tilt and azimuth (needed for `pvlib` clear-sky modelling in Stage 3 — not found in what I could fetch of the documentation)
 - File structure/format (one file per array per year? per month? CSV? how large?) and the practical shape of a download
-- Real missing-value/duplicate-timestamp/clipping/flat-line behaviour — only the publication's own summary (>99% availability, two named incidents) is available so far, not a direct check
+- Real missing-value/duplicate-timestamp/clipping/flat-line behaviour — only the publication's own summary (>99% availability for 2015-2016, two named incidents) is available so far, not a direct check
+- The 73-217kW vs 271kW array-capacity conflict (§4)
 
 ## 6. Verdict so far
 
