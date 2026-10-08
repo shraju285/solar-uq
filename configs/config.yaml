@@ -86,7 +86,18 @@ models:
 
 uncertainty:
   cqr:
-    enabled: false          # stretch goal — Stage 7 only, after core is complete
+    enabled: true            # Stage 7: split-conformal calibration of the Stage 6 quantile LSTM
+    # Calibration set: the existing validation split (the same 16,843 windows
+    # Stage 5/6 used for early stopping), not a new split. Stage 5/6 only ever
+    # used validation to pick a stopping epoch -- never to fit model weights --
+    # so it remains valid calibration data for a post-hoc, non-retraining step;
+    # the alternative (carving a brand-new calibration-only slice) isn't
+    # available without changing the locked Stage 3 split boundaries. See
+    # docs/decisions.md (D-2026-10-08, Stage 7 entry) for the full reasoning.
+    calibration_source: validation_split
+    method: split_conformal_per_horizon_per_quantile  # Romano, Patterson & Candes
+                                                        # 2019 (CQR), applied to every
+                                                        # configured quantile independently
 
 evaluation:
   daytime_only_headline: true
