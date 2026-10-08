@@ -24,6 +24,6 @@ Learned: the P50 head costs a little point-forecast accuracy relative to Stage 5
 
 ## 2026-10-08 — Stage 7: split-conformal calibration of the Stage 6 quantile LSTM
 
-Commit: see below (log updated after commit, same two-step pattern as Stage 6). Config: `configs/config.yaml` `uncertainty.cqr` (method `split_conformal_per_horizon_per_quantile`, calibration source = the existing validation split). Results: `results/runs/stage7_cqr/`. No retraining; Stage 5/6 untouched.
+Commit `06d236c`. Config: `configs/config.yaml` `uncertainty.cqr` (method `split_conformal_per_horizon_per_quantile`, calibration source = the existing validation split). Results: `results/runs/stage7_cqr/`. No retraining; Stage 5/6 untouched.
 Headline (test, before -> after calibration): P10-P90 coverage 77.2% -> 80.0% overall; per-horizon coverage 65-90% -> 77.5-84.4% (much more even); interval width 30.14 -> 27.22 kW (down, not up); P50 MAE 8.85 -> 8.38 kW; pinball loss (all quantiles) 2.758 -> 2.589.
 Learned: a per-horizon, per-quantile split-conformal correction fixed Stage 6's uneven calibration without the width/coverage trade-off you'd normally expect — but horizon step 5 is still the worst-calibrated and widest step even after correction (84.4% coverage, 47.8 kW width), so the underlying per-horizon irregularity in the trained quantile head is reduced, not eliminated. Also: correcting all 7 quantiles independently causes real crossing — 33.8% of (window, horizon) pairs needed re-sorting to restore order, a genuine cost of this extension of CQR worth flagging if revisited.
