@@ -30,6 +30,6 @@ Learned: a per-horizon, per-quantile split-conformal correction fixed Stage 6's 
 
 ## 2026-10-08 — Stage 8: final evaluation and consolidated results
 
-Commit: see below (log updated after commit, same two-step pattern as Stages 6-7). No new run/config — reads `results/runs/{stage4_baselines,stage5_lstm,stage6_quantile_lstm,stage7_cqr}/metrics.json` only. Results: `results/runs/stage8_final/` (consolidated_results.json + 5 figures); full write-up: `docs/stage8_final_report.md`.
+Commit `6bcf441`. No new run/config — reads `results/runs/{stage4_baselines,stage5_lstm,stage6_quantile_lstm,stage7_cqr}/metrics.json` only. Results: `results/runs/stage8_final/` (consolidated_results.json + 5 figures); full write-up: `docs/stage8_final_report.md`.
 Headline (test): LSTM beats persistence (8.71 vs 13.41 kW MAE) and ARIMA (vs 16.48 kW) at every horizon from 30 min onward. Quantile LSTM calibrated: MAE 8.38 kW, P10-P90 coverage 80.0% (vs 77.2% uncalibrated), width 27.22 kW (vs 30.14 kW uncalibrated) — calibration improved coverage AND reduced width here, not a trade-off.
 Learned: consolidating across stages makes the horizon-5 anomaly and the point-vs-probabilistic trade-off visually obvious in a way no single stage's report showed on its own. No significance test was run (deliberate scope decision, documented in `docs/decisions.md`) — all comparisons are magnitudes, not significance claims.
