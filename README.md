@@ -22,7 +22,9 @@ src/solaruq/
   data/              Loading and cleaning
   features/          Feature engineering, scaling, windowing
   models/            Persistence, ARIMA, LSTM, quantile LSTM
-  uncertainty/       CQR (stretch goal, Stage 7)
+  uncertainty/       Split-conformal calibration (Stage 7; see docs/decisions.md
+                     for why this is per-horizon/per-quantile calibration, not
+                     canonical CQR, despite the module's working name)
   evaluation/         Metrics shared by every model
   utils/             Config loading and small shared helpers
 scripts/             Command-line entry points (train, evaluate, ...)
