@@ -22,6 +22,9 @@ pvlib>=0.11,<0.12
 plotly>=5.20,<6.0
 streamlit>=1.35,<2.0
 
+# Parquet I/O (compact intermediate storage for audit/interim data)
+pyarrow>=16.0,<18.0
+
 # Config files
 PyYAML>=6.0,<7.0
 

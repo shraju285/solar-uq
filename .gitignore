@@ -29,6 +29,10 @@ models/*
 results/runs/*
 !results/runs/.gitkeep
 
+# Audit parquet exports — large, regenerable from data/raw/ via the audit
+# script; the committed audit output is summary.json, not these.
+results/audits/**/*.parquet
+
 # Editor / OS
 .DS_Store
 .vscode/
