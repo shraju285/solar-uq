@@ -67,7 +67,22 @@ models:
     target_scaling: standardize  # fit on train only, inverted before evaluation
   quantile_lstm:
     enabled: true
-    quantiles: [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]
+    quantiles: [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]  # locked at Stage 0; satisfies
+                                                            # Stage 6's P10/P50/P90 minimum
+                                                            # with richer calibration besides
+    # Same encoder hyperparameters as models.lstm (Stage 5), deliberately, so the
+    # point-forecast comparison (P50 vs the Stage 5 LSTM) isolates the effect of
+    # quantile regression rather than a different-sized network -- see
+    # docs/decisions.md (D-2026-10-08, Stage 6 entry).
+    hidden_size: 64
+    num_layers: 1
+    dropout: 0.1
+    learning_rate: 0.001
+    batch_size: 256
+    max_epochs: 40
+    patience: 5
+    target_scaling: standardize
+    coverage_interval: [0.10, 0.90]  # the P10-P90 interval used for coverage/width/interval-score reporting
 
 uncertainty:
   cqr:

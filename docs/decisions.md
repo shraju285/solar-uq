@@ -4,9 +4,35 @@ One entry per decision that shapes the project. Newest first. This is the record
 
 ---
 
-## D-2026-10-08 — Stage 5: LSTM point-forecast architecture and training choices
+## D-2026-10-08 — Stage 6: quantile-regression LSTM
 
 **Status:** implemented, not yet approved by the user — proposed here for the viva record; flag if any of these should change.
+
+**Why quantile regression (vs. e.g. MC Dropout or deep ensembles):** fixed at Stage 0 (D-2026-09-27) — a single well-defined loss (pinball loss) that is easier to fully explain and defend in the viva than a sampling-based method, and it maps directly onto the `[q05, q10, q25, q50, q75, q90, q95]` prediction-file schema the project already committed to in the README. Not revisited here; this entry only covers what Stage 5 left open.
+
+**Quantiles selected:** the full set already locked in `configs/config.yaml` at Stage 0 — `[0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95]`. This satisfies Stage 6's explicit minimum (P10/P50/P90) while giving a proper calibration/reliability diagram (needs more than 3 points) at no extra implementation cost — the model predicts all of them in one forward pass regardless of how many there are.
+
+| Decision | Choice | Why |
+|---|---|---|
+| Architecture | Identical encoder to Stage 5's `LSTMPointForecaster` (1-layer LSTM, hidden_size=64, concatenated with flattened horizon-known solar position), only the head changes: `Linear(88, horizon_steps * n_quantiles)` instead of `Linear(88, horizon_steps)` | The brief asked to "keep the architecture as close as reasonably possible to Stage 5 so the comparison is scientifically meaningful" — isolating the effect of quantile regression from the effect of a differently-sized network |
+| Non-crossing quantiles | Enforced by construction: the head's raw output is reshaped to (horizon_steps, n_quantiles), the lowest quantile is used as-is, and each subsequent quantile is the previous one plus `softplus(raw)` (always >= 0), via `cumsum` | Independently pinball-trained quantiles have no guarantee of coming out in the right order (crossing). Enforcing it structurally is simpler to explain and test than a post-hoc sorting fix or a crossing-penalty loss term, and keeps the "no architectural changes without a specific technical reason" rule satisfied — this is a one-line change to the head, not a new architecture |
+| Loss | Mean pinball loss across every (window, horizon step, quantile) triple, summed into one scalar for one shared backward pass | Standard for joint multi-quantile regression; a single loss keeps training as close to Stage 5's single-MSE loop as possible |
+| Target scaling | Same standardize-train-only-fit-then-invert approach as Stage 5 (`src/solaruq/utils/scaling.py`, reused, not reimplemented). Inversion is valid for quantiles because it's an increasing affine map (`y*std + mean`, std > 0), which commutes with quantiles | Keeps Stage 5 and Stage 6 directly comparable in physical kW without duplicating scaling logic |
+| Hyperparameters (lr, batch size, epochs, patience) | Identical to Stage 5's: Adam 1e-3, batch 256, max 40 epochs, patience 5, seed 42 | Same reasoning as the architecture choice — isolate the effect of the loss/output structure, not retune two things at once (also satisfies "no extensive hyperparameter search") |
+| P10-P90 as the reported interval | `coverage_interval: [0.10, 0.90]` added to `configs/config.yaml` | The brief's explicit ask; an 80% nominal interval is also the conventional default in the solar-forecasting UQ literature the proposal cites |
+| Interval (Winkler) score, in addition to coverage and width | Added, for the P10-P90 interval only | Justified because coverage and width alone can hide a bad trade-off (e.g. a deceptively "sharp" but undercovering interval) — the Winkler score (Gneiting & Raftery, 2007) is a single proper scoring rule combining both, standard in the UQ literature, and trivial to compute once coverage/width exist |
+
+**Real-data result and an honest calibration limitation (see `results/runs/stage6_quantile_lstm/`):** P50 test MAE/RMSE (8.85/16.28 kW) is close to but slightly worse than Stage 5's dedicated point LSTM (8.71/15.81 kW) — expected, since this model is optimizing 7 quantiles jointly rather than one point forecast. Overall P10-P90 coverage (77.2% test, nominal 80%) and the pooled (all-horizons) calibration plot both look reasonably close to nominal. **However, per-horizon coverage and interval width are visibly uneven, not smoothly degrading with horizon as expected** (`coverage_by_horizon.png`, `interval_width_by_horizon.png`): e.g. test coverage swings from 65% (horizon step 1) to 90% (step 2) to 67% (steps 3-4) back up to 90% (step 5); interval width spikes to ~52 kW at horizon step 5 against a ~20-30 kW range elsewhere. The training loss curve (`loss_curve.png`) shows this isn't a plotting artefact — both train and validation pinball loss bounce non-monotonically for several epochs before settling, consistent with a somewhat unstable joint optimization across 56 simultaneous outputs (8 horizons x 7 quantiles) from one small shared encoder and one linear head. This is reported as-is, not smoothed over or re-run with a cherry-picked seed, per the brief's explicit instruction not to overclaim calibration.
+
+**What would change if revisited:** the most likely fix for the uneven per-horizon calibration is a slightly larger/more stable head (e.g. a small per-horizon linear layer instead of one shared 56-wide layer) or more training epochs with a lower learning rate — not a different model family. Out of scope for Stage 6 as briefed (no architecture changes without a specific technical reason, no extensive hyperparameter search); flagged here as a concrete, scoped follow-up rather than silently patched.
+
+**Deferred, not a Stage 6 gap:** the README's `[q05, q10, ..., q95]` prediction-file schema (timestamp/horizon/y_true/y_hat/quantile columns written to a file) is not implemented by either Stage 5 or Stage 6 — both write `metrics.json` summaries only, matching the Stage 4 convention. Building the actual prediction-file export is a dashboard-integration concern, naturally belonging to Stage 10 (or whenever Stage 8/9 first needs it), not introduced here to avoid scope creep.
+
+---
+
+## D-2026-10-08 — Stage 5: LSTM point-forecast architecture and training choices
+
+**Status:** implemented, approved by the user 2026-10-08.
 
 The user's Stage 5 brief fixed the model family (direct multi-step LSTM, no recursion), the inputs (lookback target + weather + solar position; horizon-known solar position), the split usage (train/val/test), and explicitly forbade GRU/Transformer/attention/ensembles/extensive hyperparameter search. It did not fix the following, so they were decided here:
 
