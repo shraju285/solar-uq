@@ -4,6 +4,26 @@ One entry per decision that shapes the project. Newest first. This is the record
 
 ---
 
+## D-2026-10-08 — Stage 9: Streamlit dashboard
+
+**Status:** implemented, not yet approved by the user — proposed here for the viva record.
+
+**Scope decision: presentation only, no new modelling.** The brief was explicit that the dashboard must use the existing frozen Stage 5-8 files and must not train or recalibrate anything at startup. `dashboard/data_loader.py` only reads `results/runs/stage7_cqr/test_predictions_calibrated.npz` and `results/runs/stage8_final/consolidated_results.json`; it has no import of `torch`, `solaruq.models`, or any training/calibration script, which `tests/test_dashboard.py` checks statically. This was also verified by actually starting the app (`streamlit run dashboard/app.py`), confirming it serves (HTTP 200), renders every section correctly (checked with a headless browser screenshot), and runs as a ~60MB process with no `torch` loaded.
+
+**Decision: the selectable example uses the 15-minute-ahead horizon step only, reusing Stage 6-8's exact plotting convention.** Rather than inventing a new illustration, the dashboard's interactive plot (actual vs. calibrated P50 vs. calibrated P10-P90 band) mirrors `scripts/plot_stage8_final_figures.py`'s `plot_representative_period` function, generalized from one fixed window to any user-chosen start date and length (default: the same documented 2018-06-15 to 2018-06-19 gap-free block). This keeps the dashboard methodologically consistent with the dissertation's own static figures rather than presenting a different view of the same data.
+
+**Bug found and fixed during browser testing:** the first version compared the frozen predictions' timezone-aware `origin_time` array (fixed -05:00 offset, per the Stage 2 audit) against a timezone-naive `pd.Timestamp` built from the date picker, which raised `TypeError: Invalid comparison between dtype=datetime64[ns, UTC-05:00] and datetime64[ns]` as soon as a period was selected. Fixed by constructing the comparison timestamp with `tz=origin_time.tz`. Caught by actually running the dashboard in a browser, not by the test suite (which uses synthetic data without this specific tz subtlety) — a reminder that "tests pass" and "verified it starts and works" are different checks, both of which the Stage 9 brief asked for.
+
+**Decision: graceful, actionable errors for missing frozen files.** `results/runs/`, `models/` and `data/{raw,interim,processed}` are git-ignored, so a fresh clone has no pipeline outputs until the scripts are run. Rather than letting the dashboard crash with a raw `FileNotFoundError` traceback, `data_loader.MissingResultsError` names the exact missing file and the exact script to run to produce it; the top-level `README.md` documents the full Stage 2-8 regeneration sequence this depends on.
+
+**Decision: terminology in the dashboard's "what the interval means" and Limitations sections restates, not simplifies away, the Stage 7 verification.** The dashboard explicitly names "per-horizon, per-quantile split-conformal calibration" (not "CQR"), states the marginal-per-quantile / union-bound-for-the-interval distinction, and repeats the exchangeability and validation-reuse caveats from the Stage 7 terminology addendum above, rather than presenting a simpler but less accurate "80% confidence interval" description to a general audience.
+
+**Reproducibility review performed before declaring Stage 9 complete:** checked `git ls-files` (64 tracked files, 364K total — no raw data, no model weights, no large generated files committed); grepped the full tree for hard-coded absolute paths (`/mnt/project-files`, `/home/claude`, `/tmp/claude`, `/root/`) and for common secret patterns (API keys, tokens, PEM blocks) — none found outside the `.gitignore` file's own comment text. `README.md`'s stale "Stage 1" status line and the `dashboard/` folder's old "Stage 10" label (an earlier planned stage order, superseded by the user's own Stage 9 framing in this brief) were corrected; the aspirational CSV "prediction file schema" documented in the original README (never actually implemented — the real artifacts are `.npz` + `metrics.json`) was corrected to describe what Stages 4-8 actually write.
+
+**Full report:** files created/modified, dashboard functionality, test results and the final commit hash are given directly in the Stage 9 reply to the user, not duplicated here.
+
+---
+
 ## D-2026-10-08 — Stage 8: final evaluation and consolidated results
 
 **Status:** implemented, not yet approved by the user — proposed here for the viva record; flag if any of these should change.

@@ -13,7 +13,7 @@ This will document, for each pipeline stage: the method used, why it was chosen 
 - [x] Quantile-regression LSTM (Stage 6)
 - [x] Per-horizon, per-quantile split-conformal calibration (Stage 7)
 - [x] Final evaluation methodology (Stage 8)
-- [ ] Dashboard design (Stage 10)
+- [x] Dashboard design (Stage 9)
 
 ## LSTM point forecast (Stage 5)
 
@@ -38,3 +38,9 @@ On the test set, calibration brought P10-P90 coverage from 77.2% to 80.0% overal
 ## Final evaluation (Stage 8)
 
 Stage 8 does not add a model; it consolidates the frozen Stage 4-7 results into one final comparison, built only by re-reading each stage's saved `metrics.json` (no retraining, no new inference). The headline result: the LSTM (Stage 5) clearly beats both persistence and ARIMA(2,0,0) on the test set at every horizon from 30 minutes onward; the quantile LSTM (Stage 6) trades a small amount of point accuracy for calibrated-looking intervals; and per-horizon, per-quantile split-conformal calibration (Stage 7) measurably improves that calibration's evenness across horizons without widening intervals on average, though one horizon (75 minutes ahead) remains the least well-calibrated throughout. No statistical significance test was run at any stage, so every comparison is reported as a magnitude, not a significance claim. Full consolidated tables, five final figures, the full statistical interpretation, and the research-question conclusion (with findings, interpretation and limitations kept explicitly separate): `docs/stage8_final_report.md`. Machine-readable results: `results/runs/stage8_final/consolidated_results.json`.
+
+## Dashboard design (Stage 9)
+
+The dashboard (`dashboard/app.py`, `dashboard/data_loader.py`) is a presentation layer, not a new experiment: it reads `results/runs/stage7_cqr/test_predictions_calibrated.npz` and `results/runs/stage8_final/consolidated_results.json` -- files Stages 7 and 8 already wrote -- and renders them with Streamlit and Plotly. It performs no inference, training, or calibration of its own; `data_loader.py` imports neither `torch` nor any model or training module, so starting the dashboard cannot accidentally trigger retraining as a side effect (verified by `tests/test_dashboard.py` and by actually starting the app and confirming no `torch` import in the running process).
+
+Design choices, in line with the brief's "avoid unnecessary UI complexity": a single page (no multi-page navigation, no login, no live data source); the selectable forecast example reuses the exact plotting convention already established in the Stage 6-8 figures (15-minute-ahead horizon step, actual vs. calibrated P50 vs. calibrated P10-P90 band) so the dashboard's illustration is visually and methodologically consistent with the dissertation's own figures, just interactive; the model-comparison table reuses Stage 8's explicit "n/a" convention for point-only models' probabilistic columns rather than inventing a different display rule; and the uncertainty-interval explanation and limitations section restate, in plain language, the precise terminology and caveats already established in the Stage 7 verification (see `docs/decisions.md`, Stage 7 entry) rather than a simplified but inaccurate description.
