@@ -4,6 +4,22 @@ One entry per decision that shapes the project. Newest first. This is the record
 
 ---
 
+## D-2026-10-08 — Stage 8: final evaluation and consolidated results
+
+**Status:** implemented, not yet approved by the user — proposed here for the viva record; flag if any of these should change.
+
+**Scope decision: consolidation only, no new modelling.** The brief was explicit that Stage 8 should use only the existing frozen Stage 4-7 results. `scripts/run_stage8_consolidation.py` and `scripts/plot_stage8_final_figures.py` only read `results/runs/{stage4_baselines,stage5_lstm,stage6_quantile_lstm,stage7_cqr}/metrics.json` and the raw prediction arrays Stage 6/7 already saved — no model is loaded, no inference is run, no file under Stages 3-7 is modified.
+
+**Decision: no new statistical significance test was run.** The brief cautioned against claiming significance without a test having "actually been performed," which is a constraint on wording, not a mandate to add one. Running a paired/Diebold-Mariano-style test on the frozen per-window errors would be a legitimate additional analysis, but it was not explicitly requested among Stage 8's six enumerated deliverables, so it was left out to avoid unrequested scope expansion; every comparison in `docs/stage8_final_report.md` is phrased as a magnitude ("X kW lower than Y"), never as "significantly better." This is recorded here as a deliberate choice, flagged explicitly as a limitation in the report itself, so it can be added later as a scoped follow-up if the examiner wants it.
+
+**Decision: representative test-period figure reuses Stage 6's window unchanged.** Rather than picking a new period for Stage 8 (which would invite the "cherry-picked for a flattering look" concern the brief explicitly warned against), the same 2018-06-15 to 2018-06-19 window already used in Stage 6 — selected there only for being a fully gap-free 4-day block in a seasonally characteristic month, confirmed before any model's performance on it was examined — is reused. The selection rule is restated in `scripts/plot_stage8_final_figures.py` and `docs/stage8_final_report.md` §3.
+
+**Decision: probabilistic columns marked "n/a" for point-only models**, not filled with a point-forecast proxy or left blank, in the consolidated table — persistence, ARIMA and the Stage 5 LSTM have no quantile output, so coverage/width/pinball/interval-score genuinely do not apply to them, and the brief asked that this be made explicit.
+
+**Full report:** `docs/stage8_final_report.md` — consolidated table, per-horizon tables (all 8 horizons, labelled in minutes), 5 final figures, statistical interpretation, research-question conclusion (findings/interpretation/limitations kept separate), and a reproducibility table (commit hashes, config, seed, test period, source files).
+
+---
+
 ## D-2026-10-08 — Stage 7: split-conformal calibration of the Stage 6 quantile LSTM
 
 **Status:** implemented and approved by the user 2026-10-08. Terminology verified against the code 2026-10-08 (see addendum below) before Stage 8 began — no implementation change, only how it's described.
