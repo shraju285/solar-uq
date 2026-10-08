@@ -4,6 +4,25 @@ One entry per decision that shapes the project. Newest first. This is the record
 
 ---
 
+## D-2026-10-08 — Stage 5: LSTM point-forecast architecture and training choices
+
+**Status:** implemented, not yet approved by the user — proposed here for the viva record; flag if any of these should change.
+
+The user's Stage 5 brief fixed the model family (direct multi-step LSTM, no recursion), the inputs (lookback target + weather + solar position; horizon-known solar position), the split usage (train/val/test), and explicitly forbade GRU/Transformer/attention/ensembles/extensive hyperparameter search. It did not fix the following, so they were decided here:
+
+| Decision | Choice | Why |
+|---|---|---|
+| How `X_horizon_known` (future solar position) enters the model | Flattened (8×3=24 values) and concatenated with the LSTM's final hidden state, then passed through one `nn.Linear` head to all 8 outputs | Keeps the model a single small recurrent layer + linear head, not a second sequence model over the horizon — stays within "deliberately simple"; the horizon's solar position is deterministic (no data to flow through a second LSTM), so concatenation is sufficient |
+| Target scaling | Standardize (z-score) `y`, fit on train split only, inverted before computing any metric | Stage 3 deliberately left the target in physical kW for persistence/ARIMA/evaluation; LSTMs train more stably on standardized targets. Done entirely inside Stage 5's own training script — does not touch Stage 3's saved `.npz` files or its feature scaler |
+| `hidden_size` / `num_layers` / `dropout` | 64 / 1 / 0.1 | Smallest architecture likely to beat persistence given ~85.7k training windows; single layer keeps parameter count and CPU training time low (this container has no GPU — confirmed `torch.cuda.is_available() == False`, 4 CPU threads) |
+| Optimizer / learning rate / batch size | Adam, 1e-3, 256 | Standard defaults for a small LSTM regression task; not tuned (explicit "no extensive hyperparameter search") |
+| Early stopping | Monitor validation loss, patience 5 epochs, restore best-epoch weights, cap at 40 epochs | Directly satisfies "validation data for early stopping/model selection" |
+| Reproducibility | `torch.manual_seed(project.seed)` (42, same seed as the rest of the project) before model init and training | Satisfies the explicit test requirement for deterministic/reproducible configuration |
+
+**What would change if wrong:** if the LSTM underperforms persistence even after this, the first thing to revisit is `hidden_size`/`num_layers` (still within "simple"), not adding recursion, attention, or extra models — those remain out of scope per the user's brief.
+
+---
+
 ## D-2026-10-08 — Stage 2 Task 2: file-level NIST audit complete (Canopy + WS_1, 2015–2018)
 
 **Status:** audit complete; full detail in `docs/data_audit.md` §6–13. **All 4 decisions below confirmed and locked by the user, 2026-10-08.** Stage 3 may proceed on this basis.

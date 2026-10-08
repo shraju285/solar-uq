@@ -20,6 +20,8 @@ pvlib>=0.11,<0.12
 
 # Plotting and dashboard
 plotly>=5.20,<6.0
+kaleido==0.2.1  # static (PNG) export for plotly figures, e.g. Stage 5's loss plot;
+                # pinned -- kaleido>=1.0 needs plotly>=6, which conflicts with the plotly<6 pin above
 streamlit>=1.35,<2.0
 
 # Parquet I/O (compact intermediate storage for audit/interim data)
