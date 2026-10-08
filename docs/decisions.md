@@ -6,7 +6,7 @@ One entry per decision that shapes the project. Newest first. This is the record
 
 ## D-2026-10-08 — Stage 2 Task 2: file-level NIST audit complete (Canopy + WS_1, 2015–2018)
 
-**Status:** audit complete; full detail in `docs/data_audit.md` §6–13. This resolves the dataset's remaining open conflict and finds two real (but manageable) data-quality issues. **No decision here is final until you confirm the items in "Needs your decision" below** — none of them have been assumed.
+**Status:** audit complete; full detail in `docs/data_audit.md` §6–13. **All 4 decisions below confirmed and locked by the user, 2026-10-08.** Stage 3 may proceed on this basis.
 
 **Resolved:**
 - **Timestamp convention: fixed EST, no DST** — confirmed directly from raw file text (every July sample still shows `-05:00`, which rules out DST-observing local time). The data dictionary's "Local Solar Time" label was wrong, or described an earlier/different version of the dataset; the 2017 publication was right.
@@ -14,14 +14,14 @@ One entry per decision that shapes the project. Newest first. This is the record
 - **Cross-instrument consistency:** Canopy ↔ WS_1 alignment and pyranometer correlation (r=0.9845) both check out.
 - **The apparent 2017–2018 Canopy power "drop"** (raw annual mean nearly halves) is a data-quality artifact, not real degradation: a `-999.0` error code in `InvPAC_kW_Avg`/`InvOpStatus_Avg` became ~10x more frequent from 2017 onward (clustered in specific months, always in Canopy, never in WS_1). Once excluded, Canopy's weather-normalised output is flat across all 4 years.
 
-**Needs your decision before Stage 3:**
+**Decisions — LOCKED 2026-10-08:**
 
-| # | Decision | Recommendation | Why it's not just assumed |
+| # | Decision | Locked value | Why it wasn't just assumed |
 |---|---|---|---|
-| 1 | **Which array is the project's single PV site** — Task 2 only audited Canopy (not Ground or Roof), which I've taken as your working choice since you specifically scoped the audit that way. | Lock in **Canopy**. | "One PV site/array" was decided at Stage 0, but *which* array was never written down as its own decision until now. |
-| 2 | **Canopy nameplate capacity to use for any capacity-normalised metrics in Stage 3** — PDR record says "73–217 kW" for the three arrays combined/vaguely; the 2017 publication says 243 kW for Canopy specifically; the audit's own observed max is 260.2 kW (already above 217 kW, consistent with ~243 kW + normal AC headroom). | Use **243 kW** (2017 publication), noting 217 kW is contradicted by the data itself. | Don't want to pick a capacity number for you without you seeing the conflict — this feeds into any normalised error metric you report in the dissertation. |
-| 3 | **Cleaning policy for Canopy's `-999.0` sentinel** in `InvPAC_kW_Avg`/`InvOpStatus_Avg`. | Treat as missing (NaN) at the start of Stage 3 cleaning, before any scaling/statistics — then decide imputation vs. exclusion per-window like any other gap. | This is a Stage 3 implementation choice, not something to silently bake into the audit script. |
-| 4 | **Known Canopy gaps** (4-night Oct 2018 outage, 3 single-minute July 2018 drops) — whether to simply exclude them as gaps when building lookback/horizon windows. | Yes — treat exactly like any other gap under the existing leakage rule ("gaps between blocks sized to lookback+horizon"); no special-casing needed given how small/rare they are. | Confirming this is a trivial application of an existing rule, not a new one, before Stage 3 starts. |
+| 1 | Which array is the project's single PV site | **Canopy** | "One PV site/array" was decided at Stage 0, but *which* array was never written down as its own decision until now. |
+| 2 | Canopy nameplate capacity for any capacity-normalised metrics | **243 kW** (2017 publication figure). The PDR record's vaguer "73–217 kW" is documented as a known source discrepancy — 217 kW is directly contradicted by the audit's own observed max of 260.2 kW. | Don't want to pick a capacity number without the user seeing the conflict — feeds into any normalised error metric reported in the dissertation. |
+| 3 | Cleaning policy for Canopy's `-999.0` sentinel in `InvPAC_kW_Avg`/`InvOpStatus_Avg` | **Treated as missing/error (NaN)**, not a literal reading, before any statistics, scaling, or labels are computed. | Stage 3 implementation choice, not something to silently bake into the audit script. |
+| 4 | Known Canopy gaps (4-night Oct 2018 outage, 3 single-minute July 2018 drops) | **Handled under the existing general gap policy** (excluded, like any other gap sized against lookback+horizon) — no special-casing. | Confirms this is a plain application of an existing rule, not a new one. |
 
 **Still open from Stage 0, unaffected by this audit:**
 - Submission deadline (you're still verifying the official Canvas date).

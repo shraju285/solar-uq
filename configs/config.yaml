@@ -15,22 +15,37 @@ data:
   raw_dir: data/raw
   interim_dir: data/interim
   processed_dir: data/processed
-  timezone: TBD          # confirmed in Stage 2 audit
-  site_id: TBD            # which array, confirmed in Stage 2 audit
+  # Fixed UTC offset, confirmed from the raw files in the Stage 2 file-level
+  # audit (docs/data_audit.md §7): every July sample across all 4 years still
+  # shows -05:00, which rules out DST. Deliberately a fixed offset string, NOT
+  # an IANA zone like "America/New_York" — that zone observes DST and would
+  # silently reintroduce the exact bug the audit ruled out.
+  timezone_offset: "-05:00"   # fixed EST, no DST
+  site_id: canopy             # D-2026-10-08 #1
+  array_capacity_kw: 243       # D-2026-10-08 #2 (2017 publication figure; the
+                               # PDR record's vaguer "73-217kW" is a documented
+                               # source discrepancy, see docs/data_audit.md §12)
 
 forecast:
   resolution_minutes: 15
   lookback_steps: 24      # ~6 hours at 15-min resolution
   horizon_steps: 8         # up to 2 hours at 15-min resolution
+  completeness_threshold: 0.8  # D-2026-10-08: min. fraction of the 15 raw
+                                # 1-min rows that must be present (not NaN,
+                                # not the -999 sentinel) for a 15-min bin to
+                                # be kept; below this the whole bin is a gap.
 
 split:
-  # Chronological only — never shuffled. Exact dates filled in Stage 3 once
-  # the available date range is known (Stage 2).
-  train_end: TBD
-  val_end: TBD
-  test_end: TBD
+  # Chronological only — never shuffled. Locked 2026-10-08.
+  train_end: "2017-06-30T23:45:00-05:00"
+  val_end: "2017-12-31T23:45:00-05:00"
+  test_end: "2018-12-31T23:45:00-05:00"
   # calibration_end is only added if CQR (Stage 7) is actually built.
-  gap_steps: 32            # >= lookback_steps + horizon_steps, between blocks
+  gap_steps: 32            # >= lookback_steps + horizon_steps, between blocks.
+                            # Each split's start is (previous split's end) +
+                            # gap_steps * resolution_minutes — the buffer zone
+                            # itself is excluded from every split, so no
+                            # window can reach across a split boundary.
 
 models:
   persistence:
